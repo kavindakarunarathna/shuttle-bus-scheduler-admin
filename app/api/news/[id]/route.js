@@ -1,8 +1,9 @@
-import db from "@/lib/db";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 // PUT - Update an existing news article by ID
 export async function PUT(req, { params }) {
-  const { id } = await params; // Extract ID from the dynamic route
+  const { id } = params; // Extract ID from the dynamic route
   const body = await req.json();
   const { title, content } = body;
 
@@ -13,18 +14,16 @@ export async function PUT(req, { params }) {
   const date = new Date().toISOString();
 
   try {
-    const result = await new Promise((resolve, reject) => {
-      db.run(
-        `UPDATE news SET title = ?, content = ?, date = ? WHERE id = ?`,
-        [title, content, date, id],
-        function (err) {
-          if (err) reject(err);
-          resolve(this.changes); // This returns the number of updated rows
-        }
-      );
-    });
+    const client = await clientPromise;
+    const db = client.db("newsDatabase");
 
-    if (result === 0) {
+    // Update the news article by ID
+    const result = await db.collection("news").updateOne(
+      { _id: new ObjectId(id) }, // Filter by _id
+      { $set: { title, content, date } } // Fields to update
+    );
+
+    if (result.matchedCount === 0) {
       return new Response(JSON.stringify({ error: "News article not found." }), { status: 404 });
     }
 
@@ -37,21 +36,16 @@ export async function PUT(req, { params }) {
 
 // DELETE - Delete a news article by ID
 export async function DELETE(req, { params }) {
-  const { id } = await params; // Extract ID from the dynamic route
+  const { id } = params; // Extract ID from the dynamic route
 
   try {
-    const result = await new Promise((resolve, reject) => {
-      db.run(
-        `DELETE FROM news WHERE id = ?`,
-        [id],
-        function (err) {
-          if (err) reject(err);
-          resolve(this.changes); // This returns the number of deleted rows
-        }
-      );
-    });
+    const client = await clientPromise;
+    const db = client.db("newsDatabase");
 
-    if (result === 0) {
+    // Delete the news article by ID
+    const result = await db.collection("news").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
       return new Response(JSON.stringify({ error: "News article not found." }), { status: 404 });
     }
 

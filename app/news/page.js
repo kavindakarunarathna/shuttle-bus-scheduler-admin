@@ -49,7 +49,7 @@ export default function Home() {
   };
 
   const handleEditClick = (item) => {
-    setEditingId(item.id);
+    setEditingId(item._id);
     setEditForm({ title: item.title, content: item.content });
   };
 
@@ -65,9 +65,10 @@ export default function Home() {
       if (res.ok) {
         const updatedNews = await res.json();
         setNews((prevNews) =>
-          prevNews.map((item) => (item.id === id ? updatedNews : item))
+          prevNews.map((item) => (item._id === id ? updatedNews : item))
         );
         setEditingId(null);
+        handleRefresh()
       }
     } finally {
       setSubmitting(false);
@@ -81,7 +82,7 @@ export default function Home() {
         method: "DELETE",
       });
       if (res.ok) {
-        setNews((prevNews) => prevNews.filter((item) => item.id !== id));
+        setNews((prevNews) => prevNews.filter((item) => item._id !== id));
       }
     } finally {
       setSubmitting(false);
@@ -142,10 +143,10 @@ export default function Home() {
         ) : (
           news.map((item, index) => (
             <Card key={index} className="news-item">
-              {editingId === item.id ? (
+              {editingId === item._id ? (
                 // Edit Form
                 <form
-                  onSubmit={(e) => handleEditSubmit(e, item.id)}
+                  onSubmit={(e) => handleEditSubmit(e, item._id)}
                   className="edit-form"
                 >
                   <CardHeader>
@@ -203,7 +204,7 @@ export default function Home() {
                         Edit
                       </Button>
                       <Button
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => handleDelete(item._id)}
                         disabled={submitting}
                       >
                         {submitting ? "Deleting..." : "Delete"}
