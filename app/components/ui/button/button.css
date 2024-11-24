@@ -1,0 +1,68 @@
+/* components/ui/button.css */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Button variants */
+.button--default {
+  background: #1b1b1b;
+  color: white;
+}
+
+.button--default:hover:not(:disabled) {
+  background: #000000;
+}
+
+.button--destructive {
+  background: #ef4444;
+  color: white;
+}
+
+.button--destructive:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.button--outline {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #1f2937;
+}
+
+.button--outline:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+/* Button sizes */
+.button--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.button--default {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.button--lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
