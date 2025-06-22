@@ -10,7 +10,7 @@ export default function Home() {
       <a href="/seat-reservation"><br></br>Seat Reservation</a>
       <a href="/shuttle-tickets"><br></br>Ticket Price</a>
       <a href="/lost&Found"><br></br>Lost & Found</a>
-      <a href="/contactInformation"><br></br> Campus Security Contact</a>
+      <a href="/contact-information"><br></br> Campus Security Contact</a>
       <a href="/aboutUs"><br></br> About Us</a>
     </div>
   );
