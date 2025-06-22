@@ -12,17 +12,17 @@ export default function CampusSecurity() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [createForm, setCreateForm] = useState({ 
-    name: "", 
-    role: "", 
-    phone: "", 
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    role: "",
+    phone: "",
     email: "",
     emergencyInstructions: ""
   });
-  const [editForm, setEditForm] = useState({ 
-    name: "", 
-    role: "", 
-    phone: "", 
+  const [editForm, setEditForm] = useState({
+    name: "",
+    role: "",
+    phone: "",
     email: "",
     emergencyInstructions: ""
   });
@@ -52,10 +52,10 @@ export default function CampusSecurity() {
       if (res.ok) {
         const newContact = await res.json();
         setContacts([newContact, ...contacts]);
-        setCreateForm({ 
-          name: "", 
-          role: "", 
-          phone: "", 
+        setCreateForm({
+          name: "",
+          role: "",
+          phone: "",
           email: "",
           emergencyInstructions: ""
         });
@@ -68,10 +68,10 @@ export default function CampusSecurity() {
 
   const handleEditClick = (item) => {
     setEditingId(item._id);
-    setEditForm({ 
-      name: item.name, 
-      role: item.role, 
-      phone: item.phone, 
+    setEditForm({
+      name: item.name,
+      role: item.role,
+      phone: item.phone,
       email: item.email,
       emergencyInstructions: item.emergencyInstructions
     });
@@ -115,6 +115,7 @@ export default function CampusSecurity() {
 
   return (
     <div className="campus-security-container" style={{ margin: 120 }}>
+      <a href="/">Home</a>
       {/* Create Contact Form */}
       <Card style={{ borderLeftWidth: 0 }}>
         <CardHeader>

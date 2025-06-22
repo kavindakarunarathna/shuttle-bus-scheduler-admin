@@ -114,6 +114,7 @@ export default function LostAndFound() {
 
   return (
     <div className="lost-found-container" style={{ margin: 120 }}>
+      <a href="/">Home</a>
       {/* Creation Form */}
       <Card style={{ borderLeftWidth: 0 }}>
         <CardHeader>

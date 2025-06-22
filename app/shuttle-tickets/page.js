@@ -102,6 +102,7 @@ export default function ShuttleTicketPrices() {
 
   return (
     <div className="shuttle-tickets-container" style={{ margin: 120 }}>
+      <a href="/">Home</a>
       {/* Creation Form */}
       <Card style={{ borderLeftWidth: 0 }}>
         <CardHeader>

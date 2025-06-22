@@ -193,6 +193,7 @@ export default function ShuttleSeatReservationPage() {
   
   return (
     <div className="shuttle-reservation-container p-8 max-w-4xl mx-auto min-h-screen">
+      <a href="/">Home</a>
       {/* Reservation Creation Form */}
       <Card className="mb-6">
         <CardHeader>
