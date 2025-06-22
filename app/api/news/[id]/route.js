@@ -15,7 +15,7 @@ export async function PUT(req, { params }) {
 
   try {
     const client = await clientPromise;
-    const db = client.db("newsDatabase");
+    const db = client.db("ShuttleTrackDB");
 
     // Update the news article by ID
     const result = await db.collection("news").updateOne(
@@ -40,7 +40,7 @@ export async function DELETE(req, { params }) {
 
   try {
     const client = await clientPromise;
-    const db = client.db("newsDatabase");
+    const db = client.db("ShuttleTrackDB");
 
     // Delete the news article by ID
     const result = await db.collection("news").deleteOne({ _id: new ObjectId(id) });

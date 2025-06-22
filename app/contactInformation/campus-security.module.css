@@ -1,0 +1,65 @@
+/* campus-security.module.css */
+
+.campus-security-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .security-contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .security-contacts-list {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .security-contact-item {
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .security-contact-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .contact-details {
+    line-height: 1.6;
+  }
+  
+  .contact-role {
+    color: #666;
+    margin-top: 5px;
+  }
+  
+  .emergency-instructions {
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+  }
+  
+  .last-updated {
+    color: #888;
+    font-size: 0.8em;
+    display: block;
+    margin-top: 10px;
+  }
+  
+  .loading-state,
+  .empty-state {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+  }
+  
+  .action-buttons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+  }

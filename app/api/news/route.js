@@ -3,7 +3,7 @@ import clientPromise from "@/lib/mongodb";
 export async function GET(req) {
   try {
     const client = await clientPromise;
-    const db = client.db("newsDatabase");
+    const db = client.db("ShuttleTrackDB");
     const news = await db.collection("news").find({}).sort({ date: -1 }).toArray();
 
     return new Response(JSON.stringify(news), { status: 200 });
@@ -25,7 +25,7 @@ export async function POST(req) {
 
   try {
     const client = await clientPromise;
-    const db = client.db("newsDatabase");
+    const db = client.db("ShuttleTrackDB");
     const result = await db.collection("news").insertOne({ title, content, date });
 
     return new Response(

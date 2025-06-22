@@ -1,74 +1,92 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import "./news.module.css";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 
-export default function Home() {
-  const [news, setNews] = useState([]);
+export default function AboutUsAdmin() {
+  const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState(null); // Tracks the ID of the news being edited
-  const [createForm, setCreateForm] = useState({ title: "", content: "" });
-  const [editForm, setEditForm] = useState({ title: "", content: "" });
+  const [editingId, setEditingId] = useState(null);
+  const [createForm, setCreateForm] = useState({ 
+    title: "", 
+    content: "", 
+    order: 0
+  });
+  const [editForm, setEditForm] = useState({ 
+    title: "", 
+    content: "", 
+    order: 0
+  });
 
   useEffect(() => {
-    fetch("/api/news")
+    fetch("/api/about-us")
       .then((res) => res.json())
       .then((data) => {
-        setNews(data);
+        // Sort sections by order
+        setSections(data.sort((a, b) => a.order - b.order));
         setLoading(false);
       });
   }, []);
 
   const handleRefresh = () => {
-    window.location.reload(); // Reloads the current page
+    window.location.reload();
   };
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/news", {
+      const res = await fetch("/api/about-us", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(createForm),
       });
       if (res.ok) {
-        const newNews = await res.json();
-        setNews([newNews, ...news]);
-        setCreateForm({ title: "", content: "" });
-        handleRefresh()
+        const newSection = await res.json();
+        setSections([...sections, newSection].sort((a, b) => a.order - b.order));
+        setCreateForm({ 
+          title: "", 
+          content: "", 
+          order: 0
+        });
+        handleRefresh();
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleEditClick = (item) => {
-    setEditingId(item._id);
-    setEditForm({ title: item.title, content: item.content });
+  const handleEditClick = (section) => {
+    setEditingId(section._id);
+    setEditForm({ 
+      title: section.title, 
+      content: section.content, 
+      order: section.order
+    });
   };
 
   const handleEditSubmit = async (e, id) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/news/${id}`, {
+      const res = await fetch(`/api/about-us/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
       if (res.ok) {
-        const updatedNews = await res.json();
-        setNews((prevNews) =>
-          prevNews.map((item) => (item._id === id ? updatedNews : item))
+        const updatedSection = await res.json();
+        setSections(
+          sections
+            .map((section) => (section._id === id ? updatedSection : section))
+            .sort((a, b) => a.order - b.order)
         );
         setEditingId(null);
-        handleRefresh()
+        handleRefresh();
       }
     } finally {
       setSubmitting(false);
@@ -78,11 +96,15 @@ export default function Home() {
   const handleDelete = async (id) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/news/${id}`, {
+      const res = await fetch(`/api/about-us/${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        setNews((prevNews) => prevNews.filter((item) => item._id !== id));
+        setSections(
+          sections
+            .filter((section) => section._id !== id)
+            .sort((a, b) => a.order - b.order)
+        );
       }
     } finally {
       setSubmitting(false);
@@ -90,29 +112,38 @@ export default function Home() {
   };
 
   return (
-    <div className="news-container" style={{ margin: 120 }}>
-      <a href="/">Home</a>
+    <div className="about-us-admin-container" style={{ margin: 120 }}>
       {/* Creation Form */}
       <Card style={{ borderLeftWidth: 0 }}>
         <CardHeader>
-          <CardTitle>Add News</CardTitle>
+          <CardTitle>Add New About Us Section</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreateSubmit} className="news-form">
+          <form onSubmit={handleCreateSubmit} className="about-us-form">
             <Input
               type="text"
-              placeholder="News Title"
+              placeholder="Section Title"
               value={createForm.title}
-              style={{ marginTop: 10 }}
+              style={{ marginBottom: 10 }}
               onChange={(e) =>
                 setCreateForm({ ...createForm, title: e.target.value })
               }
               required
             />
+            <Input
+              type="number"
+              placeholder="Display Order"
+              value={createForm.order}
+              style={{ marginBottom: 10 }}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, order: parseInt(e.target.value) || 0 })
+              }
+              required
+            />
             <Textarea
-              placeholder="News Content"
+              placeholder="Section Content"
               value={createForm.content}
-              style={{ marginTop: 10 }}
+              style={{ marginBottom: 10, minHeight: 150 }}
               onChange={(e) =>
                 setCreateForm({ ...createForm, content: e.target.value })
               }
@@ -123,40 +154,43 @@ export default function Home() {
               style={{ marginTop: 10 }}
               disabled={submitting}
             >
-              {submitting ? "Submitting..." : "Add News"}
+              {submitting ? "Submitting..." : "Add Section"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* News List */}
-      <div className="news-list">
+      {/* Sections List */}
+      <div className="about-us-list">
         {loading ? (
           <Card>
-            <CardContent className="loading-state">Loading news...</CardContent>
+            <CardContent className="loading-state">Loading sections...</CardContent>
           </Card>
-        ) : news.length === 0 ? (
+        ) : sections.length === 0 ? (
           <Card>
             <CardContent className="empty-state">
-              No news articles yet
+              No About Us sections created yet
             </CardContent>
           </Card>
         ) : (
-          news.map((item, index) => (
-            <Card key={index} className="news-item">
-              {editingId === item._id ? (
+          sections.map((section, index) => (
+            <Card key={section._id} className="about-us-section" style={{ 
+              marginTop: 10,
+              borderColor: 'purple'
+            }}>
+              {editingId === section._id ? (
                 // Edit Form
                 <form
-                  onSubmit={(e) => handleEditSubmit(e, item._id)}
+                  onSubmit={(e) => handleEditSubmit(e, section._id)}
                   className="edit-form"
                 >
                   <CardHeader>
-                    <CardTitle>Edit News</CardTitle>
+                    <CardTitle>Edit Section</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Input
                       type="text"
-                      placeholder="News Title"
+                      placeholder="Section Title"
                       value={editForm.title}
                       style={{ marginBottom: 10 }}
                       onChange={(e) =>
@@ -164,9 +198,20 @@ export default function Home() {
                       }
                       required
                     />
+                    <Input
+                      type="number"
+                      placeholder="Display Order"
+                      value={editForm.order}
+                      style={{ marginBottom: 10 }}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, order: parseInt(e.target.value) || 0 })
+                      }
+                      required
+                    />
                     <Textarea
-                      placeholder="News Content"
+                      placeholder="Section Content"
                       value={editForm.content}
+                      style={{ marginBottom: 10, minHeight: 150 }}
                       onChange={(e) =>
                         setEditForm({ ...editForm, content: e.target.value })
                       }
@@ -174,7 +219,7 @@ export default function Home() {
                     />
                     <div className="action-buttons" style={{ marginTop: 10 }}>
                       <Button type="submit" disabled={submitting}>
-                        {submitting ? "Saving..." : "Save"}
+                        {submitting ? "Saving..." : "Save Changes"}
                       </Button>
                       <Button
                         type="button"
@@ -190,22 +235,24 @@ export default function Home() {
                 // View Mode
                 <>
                   <CardHeader>
-                    <CardTitle>{item.title}</CardTitle>
+                    <CardTitle>
+                      {section.title} (Order: {section.order})
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="news-content">{item.content}</p>
-                    <time className="news-date">
-                      {new Date(item.date).toLocaleString()}
+                    <p>{section.content}</p>
+                    <time className="section-date">
+                      Last Updated: {new Date(section.updatedAt).toLocaleString()}
                     </time>
                     <div className="action-buttons" style={{ marginTop: 10 }}>
                       <Button
-                        onClick={() => handleEditClick(item)}
+                        onClick={() => handleEditClick(section)}
                         style={{ marginRight: 10 }}
                       >
                         Edit
                       </Button>
                       <Button
-                        onClick={() => handleDelete(item._id)}
+                        onClick={() => handleDelete(section._id)}
                         disabled={submitting}
                       >
                         {submitting ? "Deleting..." : "Delete"}
