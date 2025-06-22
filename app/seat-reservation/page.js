@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -11,6 +11,7 @@ export default function ShuttleSeatReservationPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [tickets, setTickets] = useState([]);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [cardDetails, setCardDetails] = useState({
@@ -50,6 +51,12 @@ export default function ShuttleSeatReservationPage() {
   ];
 
   useEffect(() => {
+    fetch("/api/shuttle-tickets")
+      .then((res) => res.json())
+      .then((data) => {
+        setTickets(data);
+      });
+
     fetch("/api/seat-reservation")
       .then((res) => res.json())
       .then((data) => {
@@ -177,26 +184,13 @@ export default function ShuttleSeatReservationPage() {
     }
   };
 
+  const selectedTicket = () => tickets.find(item => item?.description === createForm?.route);
+
   const getPrice = () => {
-    switch (createForm.route) {
-      case campusRoutes[0]:
-        return 500.00*createForm.seats;
-        break;
-      case campusRoutes[1]:
-        return 700.00*createForm.seats;
-        break;
-      case campusRoutes[2]:
-        return 900.00*createForm.seats;
-        break;
-      case campusRoutes[3]:
-        return 1200.00*createForm.seats;
-        break;
-      default:
-        return 0.00*createForm.seats;
-    }
-  }
-
-
+    const ticket = selectedTicket();
+    return ticket ? ticket.price * createForm.seats : 0;
+  };
+  
   return (
     <div className="shuttle-reservation-container p-8 max-w-4xl mx-auto min-h-screen">
       {/* Reservation Creation Form */}
@@ -239,9 +233,9 @@ export default function ShuttleSeatReservationPage() {
               disabled={showPaymentModal}
             >
               <option value="">Select Route</option>
-              {campusRoutes.map((route) => (
-                <option key={route} value={route}>
-                  {route}
+              {tickets.map((route, index) => (
+                <option key={index} value={route?.description}>
+                  {route?.description}
                 </option>
               ))}
             </select>
