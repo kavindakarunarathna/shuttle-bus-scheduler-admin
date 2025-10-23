@@ -1,8 +1,773 @@
-{
-    "build": {
-      "env": {
-        "PYTHON": "/usr/bin/python3.11"
-      }
-    }
-  }
-  
+# CODE_CELL05
+
+
+import re
+import spacy
+from langdetect import detect
+
+# Load small English NLP model (for NER)
+nlp = spacy.load("en_core_web_sm")
+
+# Feedback data
+feedback_data = [
+    "The delivery was TERRIBLE!!! My order #12345 arrived 3 days late. I'm so disappointed with the seller.",
+    "Great product! Really happy with my purchase from this particular seller. Order #67890 was perfect.",
+    "J'adore ce vendeur! Mon colis #55667 est arrivé plus tôt que prévu et en parfait état.",
+    "Customer service at eBay was unhelpful. My iPhone 14 Pro has issues. I cannot believe they won't help me.",
+    "මගේ order #99887 හි පැකේජ් එක හොඳින් පැමිණියේ නෑ. දේවල් කිහිපයක් අඩුයි.",
+    "LOVE this new MacBook Pro!!! Order delivered to 123 Main St on time. 5 stars!",
+    "Die Lieferung war viel zu spät. Bestellung #77889 kam nach zwei Wochen an. Sehr enttäuschend.",
+    "The USB cable I ordered was damaged. Never ordering again!",
+    "எனது order #44556 நேரத்தில் கிடைத்தது. பொருளின் தரம் மிகச் சிறந்தது. நன்றி!",
+    "My name is Leann, I ordered a new laptop from seller BestTech on 05/10/2023. The laptop is fantastic!",
+    "我对这次购物非常不满意。订单 #66778 延迟了五天才送到。",
+    "I received my order #54321, but the package was opened and some items were missing. Very unhappy with the service.",
+    "الخدمة سيئة للغاية! طلبي #22445 لم يصل حتى الآن. أريد استرداد المبلغ فوراً.",
+    "The headphones I bought are amazing! Thanks to the seller AudioWorld. Order #98765",
+    "मेरा ऑर्डर #33990 समय पर आ गया और पैकिंग भी बहुत अच्छी थी। धन्यवाद!",
+    "Worst experience ever! My order #11223 was lost in transit. I want a refund immediately. I'm Sandrie",
+    "注文 #11298 は予定通り届きました。商品の品質にもとても満足しています。",
+    "El producto llegó roto y la caja estaba dañada. Pedido #33445. Muy mala experiencia.",
+]
+
+# ---------- Cleaning Functions ----------
+def basic_clean(text_list):
+    """Lowercase text and remove punctuation."""
+    cleaned = [re.sub(r'[^\w\s]', '', t.lower()) for t in text_list]
+    return cleaned
+
+def remove_stopwords(text_list):
+    """Remove common English stopwords."""
+    from spacy.lang.en.stop_words import STOP_WORDS
+    cleaned = []
+    for t in text_list:
+        tokens = [word for word in t.split() if word not in STOP_WORDS]
+        cleaned.append(" ".join(tokens))
+    return cleaned
+
+def normalize_text(text_list):
+    """Handle punctuation, case, and whitespace consistently."""
+    cleaned = [re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', t)).strip().lower() for t in text_list]
+    return cleaned
+
+# ---------- Apply Cleaning & Show Outputs ----------
+print("✅ STEP 1: BASIC CLEANING (Lowercase + Remove punctuation)")
+cleaned_feedback_basic = basic_clean(feedback_data)
+print(cleaned_feedback_basic[:10], "\n")  # Show first 5 results
+
+print("✅ STEP 2: REMOVE STOPWORDS (English only)")
+cleaned_feedback_nostop = remove_stopwords(cleaned_feedback_basic)
+print(cleaned_feedback_nostop[:10], "\n")
+
+print("✅ STEP 3: NORMALIZATION (Consistent case & spacing)")
+cleaned_feedback_normalized = normalize_text(feedback_data)
+print(cleaned_feedback_normalized[:10])
+
+# CODE_CELL06
+
+
+
+# ---------- Entity Extraction ----------
+def extract_entities_spacy(text_list):
+    """Extract named entities (organizations, products, locations, order numbers)."""
+    entities = []
+    for t in text_list:
+        doc = nlp(t)
+        entities.append([(ent.text, ent.label_) for ent in doc.ents])
+    return entities
+
+def extract_numbers(text_list):
+    """Extract numeric values (e.g., order IDs, numbers)."""
+    numbers = []
+    for t in text_list:
+        nums = re.findall(r'\d+', t)
+        numbers.append(nums)
+    return numbers
+
+def keyword_match(text_list, keywords):
+    """Find keyword matches in text."""
+    matches = []
+    for t in text_list:
+        found = [kw for kw in keywords if kw.lower() in t.lower()]
+        matches.append(found)
+    return matches
+
+print("✅ ENTITY EXTRACTION:")
+entities = extract_entities_spacy(feedback_data)
+for i, e in enumerate(entities):
+    print(f"Feedback {i+1}: {e}")
+print()
+
+print("✅ NUMBER EXTRACTION:")
+numbers = extract_numbers(feedback_data)
+for i, n in enumerate(numbers):
+    print(f"Feedback {i+1}: {n}")
+print()
+
+print("✅ KEYWORD MATCHING:")
+keywords = ["refund", "delivery", "order", "seller", "MacBook"]
+matches = keyword_match(feedback_data, keywords)
+for i, m in enumerate(matches):
+    print(f"Feedback {i+1}: {m}")
+
+
+
+# CODE_CELL07
+from langdetect import detect, DetectorFactory
+from langdetect.lang_detect_exception import LangDetectException
+
+
+# ---------- Language Detection ----------
+def detect_language_langdetect(text_list):
+    """Detect the language of each text with error handling."""
+    languages = []
+    for t in text_list:
+        try:
+            # Check if text has enough content for detection
+            if len(t.strip()) < 3:
+                languages.append("unknown")
+            else:
+                lang = detect(t)
+                languages.append(lang)
+        except LangDetectException:
+            languages.append("unknown")
+        except Exception as e:
+            languages.append(f"error: {str(e)}")
+    return languages
+
+def count_words(text_list):
+    """Count words in each feedback."""
+    return [len(t.split()) for t in text_list]
+
+def char_length(text_list):
+    """Return character length of each feedback."""
+    return [len(t) for t in text_list]
+
+
+# =============================================
+# FUNCTION CALLS AND OUTPUT GENERATION
+# =============================================
+
+languages = detect_language_langdetect(feedback_data)
+word_counts = count_words(feedback_data)
+char_counts = char_length(feedback_data)
+
+print("✅ LANGUAGE DETECTION RESULTS:")
+for i, lang in enumerate(languages):
+    print(f"Feedback {i+1}: {lang}")
+
+print("\n✅ WORD COUNT RESULTS:")
+for i, wc in enumerate(word_counts):
+    print(f"Feedback {i+1}: {wc} words")
+
+print("\n✅ CHARACTER LENGTH RESULTS:")
+for i, cc in enumerate(char_counts):
+    print(f"Feedback {i+1}: {cc} characters")
+
+
+# CODE_CELL08  
+import re
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from transformers import pipeline
+
+nltk.download("vader_lexicon", quiet=True)
+
+# ---------- Baseline Keyword Sentiment ----------
+def keyword_sentiment(text_list):
+    """Simple keyword-based sentiment classification (baseline)."""
+    positive_words = ["good", "great", "happy", "love", "fantastic", "amazing"]
+    negative_words = ["terrible", "bad", "worst", "gross", "unhappy", "disappointed"]
+    
+    results = []
+    for text in text_list:
+        text_lower = text.lower()
+        score = sum([1 for w in positive_words if w in text_lower]) - \
+                sum([1 for w in negative_words if w in text_lower])
+        label = "positive" if score > 0 else "negative"
+        results.append({"text": text, "predicted_sentiment": label})
+    return pd.DataFrame(results)
+
+# ---------- Bag-of-Words Pipeline ----------
+def bow_sentiment_pipeline(text_list):
+    """Train/test Bag-of-Words + Logistic Regression sentiment classifier."""
+    # Debugging note: since no labels are given, we simulate them for demonstration
+    # (in real exams, students would be provided training labels separately).
+    labels = np.random.choice([0, 1], size=len(text_list))  # 0=neg, 1=pos (simulated)
+    
+    X_train, X_test, y_train, y_test = train_test_split(text_list, labels, test_size=0.3, random_state=42)
+    
+    pipe = Pipeline([
+        ('vectorizer', CountVectorizer()),
+        ('classifier', LogisticRegression(max_iter=500))
+    ])
+    
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
+    
+    print("=== Bag-of-Words Sentiment Analysis Report ===")
+    print(classification_report(y_test, y_pred))
+    return pipe, X_test, y_pred
+
+# ---------- 1. Keyword-based Sentiment ----------
+print("\n1️⃣  Keyword-based Sentiment Results:")
+keyword_results = keyword_sentiment(feedback_data)
+print(keyword_results.to_string(index=False))
+
+
+# ---------- 2. Bag-of-Words Logistic Regression ----------
+print("\n2️⃣  Bag-of-Words Sentiment Analysis (Demo):")
+pipe, X_test, y_pred = bow_sentiment_pipeline(feedback_data)
+
+
+# CODE_CELL09
+# ---------- Debugging Pipeline Steps ----------
+def debug_pipeline_step(text_list, step="vectorizer"):
+    """Inspect intermediate pipeline steps for debugging/interpretation."""
+    vec = CountVectorizer()
+    X = vec.fit_transform(text_list)
+    if step == "vectorizer":
+        print("Vocabulary size:", len(vec.vocabulary_))
+        print("Sample vocabulary:", list(vec.vocabulary_.items())[:10])
+    elif step == "matrix":
+        print("Shape of document-term matrix:", X.shape)
+        print("Sample row vector (first document):", X[0].toarray())
+    else:
+        print("Step not recognized. Options: 'vectorizer', 'matrix'.")
+
+# ---------- Pretrained Models ----------
+def pretrained_sentiment_vader(text_list):
+    """Sentiment analysis using VADER (lexicon-based)."""
+    sid = SentimentIntensityAnalyzer()
+    results = []
+    for text in text_list:
+        score = sid.polarity_scores(text)["compound"]
+        label = "positive" if score > 0 else "negative"
+        results.append({"text": text, "predicted_sentiment": label})
+    return pd.DataFrame(results)
+
+def pretrained_sentiment_transformer(text_list):
+    """Sentiment analysis using Hugging Face transformer model."""
+    model = pipeline("sentiment-analysis")
+    return model(text_list)
+
+
+print("\n3️⃣  Debug Pipeline Vocabulary & Matrix")
+debug_pipeline_step(feedback_data, step="vectorizer")
+debug_pipeline_step(feedback_data, step="matrix")
+
+print("\n4️⃣  Pretrained VADER Sentiment")
+vader_results = pretrained_sentiment_vader(feedback_data)
+print(vader_results.to_string(index=False))
+
+# ⚠️ Transformer analysis: small batch recommended
+print("\n5️⃣  Pretrained Transformer Sentiment (first 3 texts only)")
+transformer_results = pretrained_sentiment_transformer(feedback_data[:3])
+for res in transformer_results:
+    print(res)
+
+
+# CODE_CELL10
+
+import re
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# ---------- Rule-Based Classifier ----------
+def rule_based_classifier(text_list):
+    """Simple keyword-based classifier."""
+    categories = []
+    for text in text_list:
+        t = text.lower()
+        if "late" in t or "delivery" in t or "arrived" in t:
+            categories.append("Delivery Issue")
+        elif "broken" in t or "damaged" in t or "quality" in t or "problem" in t:
+            categories.append("Product Issue")
+        elif "service" in t or "support" in t or "help" in t:
+            categories.append("Service Issue")
+        elif "love" in t or "happy" in t or "great" in t or "fantastic" in t:
+            categories.append("General Praise")
+        else:
+            categories.append("Product Issue")  # fallback
+    return categories
+
+# ---------- Bag-of-Words Classifier ----------
+def bow_text_classifier(text_list, labels=None):
+    """Bag-of-Words + Logistic Regression classifier (dummy labels if not given)."""
+    if labels is None:
+        # Simulate dummy labels for demonstration
+        labels = np.random.choice(["Product Issue","Delivery Issue","Service Issue","General Praise"], size=len(text_list))
+    
+    X_train, X_test, y_train, y_test = train_test_split(text_list, labels, test_size=0.3, random_state=42)
+    pipe = Pipeline([
+        ('vectorizer', CountVectorizer()),
+        ('classifier', LogisticRegression(max_iter=500))
+    ])
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
+    print("=== Bag-of-Words Classification Report ===")
+    print(classification_report(y_test, y_pred))
+    return pipe, X_test, y_test, y_pred 
+
+
+# ---------- 1. Rule-based Classification ----------
+rule_results = rule_based_classifier(feedback_data)
+print("\n1️⃣ Rule-Based Classification Results:")
+for text, cat in zip(feedback_data, rule_results):
+    print(f"Text: {text}\n→ Category: {cat}\n")
+
+# ---------- 2. Bag-of-Words Classifier ----------
+pipe, X_test, y_test, y_pred = bow_text_classifier(feedback_data)
+print("\n2️⃣ Bag-of-Words Test Predictions:")
+for text, true_label, pred_label in zip(X_test, y_test, y_pred):
+    print(f"Text: {text}\n→ True: {true_label}, Predicted: {pred_label}\n")
+
+
+# CODE_CELL11
+# ---------- Debugging Step ----------
+def debug_classifier_step(text_list, step="features"):
+    """Inspect intermediate classifier steps."""
+    vec = CountVectorizer()
+    X = vec.fit_transform(text_list)
+    if step == "features":
+        print("Vocabulary size:", len(vec.vocabulary_))
+        print("Sample features:", list(vec.vocabulary_.items())[:10])
+    elif step == "matrix":
+        print("Shape of document-term matrix:", X.shape)
+        print("First row vector:", X[0].toarray())
+    else:
+        print("Step not recognised. Options: 'features', 'matrix'.")
+
+# ---------- Evaluation Functions ----------
+def evaluate_classifier(y_true, y_pred):
+    """Compute precision, recall, F1-score."""
+    print("=== Classification Report ===")
+    print(classification_report(y_true, y_pred))
+
+def confusion_matrix_plot(y_true, y_pred):
+    """Plot confusion matrix."""
+    cm = confusion_matrix(y_true, y_pred)
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.title("Confusion Matrix")
+    plt.show()
+
+def baseline_accuracy(y_true, y_pred):
+    """Report baseline accuracy vs. model accuracy."""
+    majority_class = pd.Series(y_true).mode()[0]
+    baseline = sum([y==majority_class for y in y_true]) / len(y_true)
+    model_acc = accuracy_score(y_true, y_pred)
+    print(f"Baseline Accuracy (majority class): {baseline:.2f}")
+    print(f"Model Accuracy: {model_acc:.2f}")
+
+
+# ---------- 2. Evaluate classifier ----------
+print("\n3️⃣ Evaluate Classifier:")
+evaluate_classifier(y_test, y_pred)
+
+# ---------- 3. Confusion Matrix ----------
+print("\n4️⃣ Confusion Matrix:")
+confusion_matrix_plot(y_test, y_pred)
+
+# ---------- 4. Baseline Accuracy ----------
+print("\n5️⃣ Baseline vs Model Accuracy:")
+baseline_accuracy(y_test, y_pred)
+
+
+# CODE_CELL12
+import pandas as pd
+import numpy as np
+
+# Simulated patient data
+np.random.seed(123)
+n_patients = 1500
+
+patient_data = {
+    'age': np.random.randint(18, 95, n_patients),
+    'length_of_stay': np.random.randint(1, 30, n_patients),
+    'num_medications': np.random.randint(1, 25, n_patients),
+    'num_diagnoses': np.random.randint(1, 16, n_patients),
+    'admission_type': np.random.choice(['Emergency', 'Urgent', 'Elective'], n_patients),
+    'discharge_disposition': np.random.choice(['Home', 'Transfer', 'AMA'], n_patients, p=[0.7, 0.25, 0.05]),
+    'previous_admissions': np.random.poisson(2, n_patients),
+    'diabetic': np.random.choice(['Yes', 'No'], n_patients, p=[0.3, 0.7]),
+    'readmitted': np.random.choice([0, 1], n_patients, p=[0.65, 0.35])
+}
+
+# Introduce missing values and outliers
+patient_df = pd.DataFrame(patient_data)
+missing_indices = np.random.choice(n_patients, int(0.1 * n_patients), replace=False)
+patient_df.loc[missing_indices[:len(missing_indices)//2], 'num_medications'] = np.nan
+patient_df.loc[missing_indices[len(missing_indices)//2:], 'length_of_stay'] = np.nan
+
+patient_df.to_csv("patient_data.csv", index=False)
+
+
+# CODE_CELL13
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def explore_dataset(df, step="summary"):
+    """Helper for exploratory data analysis with multiple options."""
+    if step == "summary":
+        print("=== Dataset Summary ===")
+        print(df.describe(include="all"))
+    elif step == "distributions":
+        df.hist(figsize=(12, 8))
+        plt.suptitle("Feature Distributions")
+        plt.show()
+    elif step == "correlations":
+        corr = df.corr(numeric_only=True)
+        sns.heatmap(corr, annot=True, cmap="coolwarm")
+        plt.title("Correlation Heatmap")
+        plt.show()
+    elif step == "target_balance":
+        sns.countplot(x="readmitted", data=df)
+        plt.title("Target Variable Balance")
+        plt.show()
+    else:
+        print("Step not recognised. Options: 'summary', 'distributions', 'correlations', 'target_balance'")
+
+# 1️⃣ Summary statistics
+explore_dataset(patient_df, step="summary")
+
+# 2️⃣ Feature distributions
+explore_dataset(patient_df, step="distributions")
+
+# 3️⃣ Correlation heatmap (numeric features)
+explore_dataset(patient_df, step="correlations")
+
+# 4️⃣ Target variable balance
+explore_dataset(patient_df, step="target_balance")
+
+
+# CODE_CELL14
+
+def handle_missing_values(df, strategy="mean", column=None):
+    """
+    Handle missing values with different strategies:
+    - 'mean' / 'median' / 'mode' for imputation
+    - 'drop' to remove missing rows
+    """
+    if column is None:
+        print("Please specify a column.")
+        return df
+    
+    if strategy == "mean":
+        df[column].fillna(df[column].mean(), inplace=True)
+    elif strategy == "median":
+        df[column].fillna(df[column].median(), inplace=True)
+    elif strategy == "mode":
+        df[column].fillna(df[column].mode()[0], inplace=True)
+    elif strategy == "drop":
+        df.dropna(subset=[column], inplace=True)
+    else:
+        print("Unknown strategy. Options: 'mean', 'median', 'mode', 'drop'")
+    
+    return df
+
+
+# Example: Fill missing values in 'num_medications' with mean
+patient_df = handle_missing_values(patient_df, strategy="mean", column="num_medications")
+
+# Example: Fill missing values in 'length_of_stay' with median
+patient_df = handle_missing_values(patient_df, strategy="median", column="length_of_stay")
+
+# Example: Fill missing values in 'num_medications' with mode
+patient_df = handle_missing_values(patient_df, strategy="mode", column="num_medications")
+
+# Example: Drop rows where 'length_of_stay' is missing
+patient_df = handle_missing_values(patient_df, strategy="drop", column="length_of_stay")
+
+# Check the first few rows to verify
+print(patient_df.head())
+
+
+# CODE_CELL15
+
+def detect_outliers_iqr(df, column):
+    """Detect outliers in a numerical column using IQR method."""
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    outliers = df[(df[column] < (Q1 - 1.5*IQR)) | (df[column] > (Q3 + 1.5*IQR))]
+    print(f"Found {len(outliers)} outliers in {column}")
+    return outliers
+
+def treat_outliers(df, column, method="cap"):
+    """
+    Treat outliers in a numerical column.
+    - 'cap' : Cap values at 5th and 95th percentiles
+    - 'remove' : Remove rows with outliers
+    """
+    if method == "cap":
+        lower = df[column].quantile(0.05)
+        upper = df[column].quantile(0.95)
+        df[column] = np.where(df[column] < lower, lower, df[column])
+        df[column] = np.where(df[column] > upper, upper, df[column])
+    elif method == "remove":
+        outliers = detect_outliers_iqr(df, column)
+        df = df.drop(outliers.index)
+    else:
+        print("Unknown method. Options: 'cap', 'remove'")
+    return df
+
+
+# Detect outliers in 'length_of_stay'
+outliers_los = detect_outliers_iqr(patient_df, 'length_of_stay')
+print(outliers_los[['length_of_stay']].head(10))
+
+# Treat outliers by capping
+patient_df_cleaned = treat_outliers(patient_df, 'length_of_stay', method='cap')
+print(patient_df_cleaned[['length_of_stay']].describe())
+
+# Optionally, detect outliers in 'num_medications'
+outliers_med = detect_outliers_iqr(patient_df, 'num_medications')
+print(outliers_med[['num_medications']].head(10))
+
+# Treat outliers by removing them
+patient_df_no_outliers = treat_outliers(patient_df, 'num_medications', method='remove')
+print(patient_df_no_outliers[['num_medications']].describe())
+
+
+# CODE_CELL16
+
+def document_data_issues(df):
+    """Check dataset for quality issues and print findings."""
+    issues = {}
+    
+    # Missing values
+    missing = df.isnull().sum()
+    issues["missing_values"] = missing[missing > 0].to_dict()
+    
+    # Duplicates
+    issues["duplicates"] = df.duplicated().sum()
+    
+    # Data types
+    issues["data_types"] = df.dtypes.to_dict()
+    
+    print("=== Data Quality Report ===")
+    for k, v in issues.items():
+        print(f"{k}: {v}")
+    return issues
+
+# Example: check data quality issues in patient_df
+data_issues = document_data_issues(patient_df)
+
+
+
+# CODE_CELL17
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+from sklearn.metrics import classification_report, roc_auc_score, roc_curve
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+import matplotlib.pyplot as plt
+
+# ---------- Model Training ----------
+def train_model(X, y, model="logistic"):
+    """
+    Train a model based on choice:
+    - 'logistic' : Logistic Regression
+    - 'random_forest' : Random Forest
+    - 'svm' : Support Vector Machine
+    """
+    if model == "logistic":
+        clf = LogisticRegression(max_iter=500)
+    elif model == "random_forest":
+        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    elif model == "svm":
+        clf = SVC(probability=True, random_state=42)
+    else:
+        print("Unknown model. Options: 'logistic', 'random_forest', 'svm'")
+        return None
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    y_proba = clf.predict_proba(X_test)[:,1] if hasattr(clf, "predict_proba") else None
+    
+    return clf, X_test, y_test, y_pred, y_proba
+
+
+
+# CODE_CELL18
+from sklearn.metrics import classification_report
+
+# ---------- Model Evaluation ----------
+def evaluate_model(y_true, y_pred, y_proba=None):
+    """Evaluate model using precision, recall, F1-score, and ROC-AUC."""
+    print("=== Classification Report ===")
+    print(classification_report(y_true, y_pred))
+    
+    if y_proba is not None:
+        auc = roc_auc_score(y_true, y_proba)
+        print(f"ROC-AUC Score: {auc:.3f}")
+        fpr, tpr, _ = roc_curve(y_true, y_proba)
+        plt.plot(fpr, tpr, label=f"AUC={auc:.2f}")
+        plt.plot([0,1],[0,1],'--',color='gray')
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("ROC Curve")
+        plt.legend()
+        plt.show()
+
+
+# Example dataset
+X = patient_df[["age", "length_of_stay", "num_medications", "num_diagnoses", "previous_admissions"]]
+y = patient_df["readmitted"]
+
+# Train logistic regression model
+clf, X_test, y_test, y_pred, y_proba = train_model(X, y, model="logistic")
+
+# Evaluate model
+evaluate_model(y_test, y_pred, y_proba)
+
+# ---------- Model Comparison ----------
+def compare_models(X, y, models=["logistic", "random_forest", "svm"]):
+    """Train multiple models and compare performance."""
+    results = {}
+    for m in models:
+        print(f"\nTraining {m}...")
+        clf, X_test, y_test, y_pred, y_proba = train_model(X, y, model=m)
+        auc = roc_auc_score(y_test, y_proba) if y_proba is not None else np.nan
+        results[m] = {
+            "precision": classification_report(y_test, y_pred, output_dict=True)["weighted avg"]["precision"],
+            "recall": classification_report(y_test, y_pred, output_dict=True)["weighted avg"]["recall"],
+            "f1": classification_report(y_test, y_pred, output_dict=True)["weighted avg"]["f1-score"],
+            "roc_auc": auc
+        }
+    return pd.DataFrame(results).T
+
+# Features & target (example)
+X = patient_df[["age", "length_of_stay", "num_medications", "num_diagnoses", "previous_admissions"]]
+y = patient_df["readmitted"]
+
+# Compare models
+model_results = compare_models(X, y, models=["logistic", "random_forest", "svm"])
+
+# Print comparison table
+print("\n=== Model Comparison Results ===")
+print(model_results)
+print(classification_report(y_test, y_pred, zero_division=0))
+
+
+
+# CODE_CELL19
+# ---------- Cross-Validation ----------
+def cross_validate_model(X, y, model="logistic", folds=5):
+    """Perform k-fold cross-validation and report average accuracy."""
+    if model == "logistic":
+        clf = LogisticRegression(max_iter=500)
+    elif model == "random_forest":
+        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    elif model == "svm":
+        clf = SVC(probability=True, random_state=42)
+    else:
+        print("Unknown model. Options: 'logistic', 'random_forest', 'svm'")
+        return None
+    
+    skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=42)
+    scores = cross_val_score(clf, X, y, cv=skf, scoring="accuracy")
+    print(f"Cross-validation scores: {scores}")
+    print(f"Mean accuracy: {scores.mean():.3f} (+/- {scores.std():.3f})")
+    return scores
+
+scores = cross_validate_model(X, y, model="random_forest", folds=5)
+
+
+
+
+# CODE_CELL20
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ---------- Inspect Model Features ----------
+def inspect_model_features(model, feature_names):
+    """
+    Inspect model features:
+    - For Logistic Regression: show coefficients
+    - For Random Forest: show feature importances
+    - For SVM: not directly interpretable (warn the student)
+    """
+    if hasattr(model, "coef_"):
+        coefs = pd.Series(model.coef_[0], index=feature_names).sort_values(key=abs, ascending=False)
+        print("Top coefficients (Logistic Regression):")
+        print(coefs.head(10))
+        coefs.head(10).plot(kind="barh", title="Top Logistic Coefficients")
+        plt.show()
+    elif hasattr(model, "feature_importances_"):
+        imps = pd.Series(model.feature_importances_, index=feature_names).sort_values(ascending=False)
+        print("Top feature importances (Random Forest):")
+        print(imps.head(10))
+        imps.head(10).plot(kind="barh", title="Top Random Forest Features")
+        plt.show()
+    else:
+        print("This model does not provide direct feature importance (e.g., SVM with kernel).")
+
+# ---------- Error Analysis ----------
+def error_analysis(y_true, y_pred, X_test=None):
+    """
+    Inspect misclassified cases for deeper evaluation.
+    """
+    errors = np.where(y_true != y_pred)[0]
+    print(f"Number of misclassified cases: {len(errors)}")
+    if X_test is not None:
+        print("Example misclassified rows:")
+        display(pd.DataFrame(X_test).iloc[errors[:5]])  # show first 5 errors
+
+# ---------- Risk & Bias Check Stub ----------
+def check_risk_bias(df, sensitive_column, predictions):
+    """
+    Simple bias check: compare prediction rates across groups.
+    Useful for healthcare fairness evaluation.
+    """
+    df_copy = df.copy()
+    df_copy["prediction"] = predictions
+    rates = df_copy.groupby(sensitive_column)["prediction"].mean()
+    print(f"Prediction rates by {sensitive_column}:")
+    print(rates)
+    return rates
+
+
+# Feature names (columns of X)
+feature_names = X.columns  # X is your training dataframe
+
+# Inspect model features
+inspect_model_features(clf, feature_names)
+
+# Evaluate errors
+# X_test and y_test are the test data split from train_test_split
+error_analysis(y_test, y_pred, X_test)
+
+# Use the original patient_df with test indices
+test_indices = X_test.index
+patient_test_df = patient_df.loc[test_indices].copy()
+patient_test_df["prediction"] = y_pred
+
+# Now check bias
+check_risk_bias(patient_test_df, sensitive_column="diabetic", predictions=y_pred)
